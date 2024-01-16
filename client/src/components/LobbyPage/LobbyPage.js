@@ -7,10 +7,9 @@ const LobbyPage = () => {
 
     const navigate = useNavigate();
     const [codeBlocks, setCodeBlocks] = useState([]);
-    const [selectedCodeBlock, setSelectedCodeBlock] = useState(null);
 
     useEffect(() => {
-        fetch('http://localhost:3001/codeblocks')
+        fetch('https://moveotaskserver-production.up.railway.app/codeblocks')
           .then((res) => res.json())
           .then((data) => setCodeBlocks(data));
       }, []);

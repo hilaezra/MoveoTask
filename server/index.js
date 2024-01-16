@@ -14,7 +14,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
     cors: {
-        origin: "http://localhost:3000", 
+        origin: "*",
         methods: ["GET", "POST"],
     },
 })
@@ -61,7 +61,7 @@ io.on('connection', (socket) => {
     if (mentorInstance.isLogged) {
       console.log("codeChange");
       updatedCode= data.newCode;
-      socket.broadcast.emit('updateCode', data.newCode);
+      socket.broadcast.emit('updateCode', {sender: socket.id, code: updatedCode});
     }
   });
 
@@ -92,16 +92,17 @@ io.on('connection', (socket) => {
       mentorInstance.socket = null;
       mentorInstance.roomId = null;
 
+      socket.broadcast.emit('exitPage');
     }
   });
-
 });
 
 // Connect to DB
 try{
-    mongoose.connect('mongodb://localhost:27017/moveo_task_db', {
+    mongoose.connect('mongodb://mongo:c32EgdD6cC3dGeC16aG-2Ee3F5dcFEB2@viaduct.proxy.rlwy.net:31452', {
       useNewUrlParser: true,
-      useUnifiedTopology: true
+      useUnifiedTopology: true,
+      dbName: "moveo_task_db",
     });
     console.log('Connected to moveo_task_db database');
 
@@ -112,6 +113,7 @@ try{
 
 app.use('/', codeBlocksRoutes);
 
-server.listen(3001, () => {
-    console.log("server is runnimg, listen port 3001")
+const port = process.env.PORT || 3000;
+server.listen(port, () => {
+    console.log(`server is runnimg, listen port ${port}`);
 })

@@ -66,5 +66,8 @@ module.exports = {
       console.log('Error checking solution:', error);
       res.status(500).json({ error: 'Internal Server Error' });
     } 
+    },
+    sayHello: (req, res) => {
+      res.status(404).json({message: "hello"});
     }
 }

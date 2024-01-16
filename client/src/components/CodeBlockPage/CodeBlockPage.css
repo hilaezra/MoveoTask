@@ -121,3 +121,20 @@ h2 {
     border-radius:100%;
     padding: 0 10px;
   }
+
+  .loading {
+    text-align:center;
+  }
+
+  .backBtn {
+    background-color: #FFF;
+    color: #000;
+    border-radius:50%;
+    padding: 7px 10px 0 10px;
+    font-size:20px;
+    width: 20px;
+    height:35px;
+    text-align:center;
+    box-shadow: #dcdcdc 0px 5px 10px;
+    cursor:pointer;
+  }

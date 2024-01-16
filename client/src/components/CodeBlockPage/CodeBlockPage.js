@@ -12,21 +12,20 @@ const CodeBlockPage = () => {
     const [socket, setSocket] = useState(null);
     const { blockId } = useParams();
     const [codeBlock, setCodeBlock] = useState();
-    const [isMentor, setIsMentor] = useState(false);
+    const [isMentor, setIsMentor] = useState(null);
     const [code, setCode] = useState('');
     const [result, setResult] = useState(null);
-    const [responseStatus, setResponseStatus] = useState(null);
 
     useEffect(() => {
         // Fetch specific code block from the server after clicking on him 
-        fetch(`http://localhost:3001/codeblockdata/${blockId}`)
+        fetch(`https://moveotaskserver-production.up.railway.app/codeblockdata/${blockId}`)
           .then((res) => res.json())
           .then((data) => {
             setCodeBlock(data);
             setCode(data.code);
 
              // connect to socket.
-             const socketConnection = io.connect("http://localhost:3001");
+             const socketConnection = io.connect("https://moveotaskserver-production.up.railway.app");
              setSocket(socketConnection);
             
  
@@ -46,6 +45,7 @@ const CodeBlockPage = () => {
                 setSocket(null);
             }
           };
+            // eslint-disable-next-line react-hooks/exhaustive-deps
       }, []);
 
     useEffect(() => {
@@ -53,7 +53,9 @@ const CodeBlockPage = () => {
         {
             socket.on('mentorConfirmed', () => {
                 console.log("mentorConfirmed");
-                setIsMentor(true);
+                
+                if(isMentor === null)
+                    setIsMentor(true);
             });
 
             socket.on('studentInit', (data) => {
@@ -62,16 +64,24 @@ const CodeBlockPage = () => {
                     alert("Mentor is connected to other code block");
                     navigate("/");
                 }else{
+                    if(isMentor === null)
+                        setIsMentor(false);
+
                     setCode(data.currentCode);
                 }
             })
+     
+            socket.on('updateCode', (res) => {
+                if(res.sender !== socket.id)
+                    setCode(res.code);
+            });
 
-            
-            socket.on('updateCode', (newCode) => {
-                setCode(newCode);
+            socket.on('exitPage', () => {
+                alert("Mentor is disconnected!");
+                navigate("/");
             });
         }
-
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [socket]);
     
     const handleCodeChange = (event) => {
@@ -82,13 +92,22 @@ const CodeBlockPage = () => {
         }
     };
 
+    const handleDisconnect = () => {
+        if(socket)
+        {
+            socket.disconnect();
+            setSocket(null);
+        }
+        navigate("/");
+    }
+
     const closeModal = (event) => {
         setResult(null);
     };
 
     const handleCheckSolutionClicked = async (code) => {
         try {
-            const response = await fetch(`http://localhost:3001/checksolution/${blockId}`, {
+            const response = await fetch(`https://moveotaskserver-production.up.railway.app/checksolution/${blockId}`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -96,7 +115,6 @@ const CodeBlockPage = () => {
               body: JSON.stringify({ code }),
             });
 
-            setResponseStatus(response.status);
             const data = await response.json();
             setResult(data.result);
           } catch (error) {
@@ -106,10 +124,15 @@ const CodeBlockPage = () => {
 
     return (
         <div className="container">
+            <div className="backBtn" onClick={() => handleDisconnect()}>←</div>
         {codeBlock ? (
             <div>
                 <h1>{codeBlock.title}</h1>
-                {isMentor ? (
+                {isMentor === null ? (
+                    <div className="loading">
+                        <p>Loading...</p>
+                    </div>
+                ) : isMentor ? (
                     <div className="MentorView">
                         <h2>Mentor View (Read-only)</h2>
                         <CodeEditor
@@ -136,24 +159,29 @@ const CodeBlockPage = () => {
                             padding={15}
                             data-color-mode="dark"
                         />
-                        <button type="submit" className="checkSolutionBtn" onClick={()=> handleCheckSolutionClicked(code)}>Check Solution</button>
+                        <button
+                            type="submit"
+                            className="checkSolutionBtn"
+                            onClick={() => handleCheckSolutionClicked(code)}
+                        >
+                            Check Solution
+                        </button>
 
                         {result && (
-                        <div className='checkSolutionModal'>
-                            <p className='modal-content'>
-                        {result === 'Correct!' ? (
-                            <>
-                            <span style={{fontSize: "64px"}}>🙂</span>
-                            <br />Congratulations! Your code is amazing!
-                            </>
-                        ):(
-                            <>Incorrect solution</>
+                            <div className="checkSolutionModal">
+                                <p className="modal-content">
+                                    {result === 'Correct!' ? (
+                                        <>
+                                            <span style={{ fontSize: "64px" }}>🙂</span>
+                                            <br />Congratulations! Your code is amazing!
+                                        </>
+                                    ) : (
+                                        <>Incorrect solution</>
+                                    )}
+                                    <span className="close-button" onClick={() => closeModal()}>&times;</span>
+                                </p>
+                            </div>
                         )}
-                            <span className="close-button" onClick={() => closeModal()}>&times;</span>
-                            </p>
-                            
-                        </div>
-                    )}
                     </div>
                 )}
             </div>
